@@ -27,11 +27,14 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
  * MavenFileFilter that prepends .js files with "//@sourceURL=..." annotation
- * (only when filtering is turned on).
+ * (only when filtering is turned on, and when first line does not contain
+ * "sourceURL").
  * @author joerg.frantzius
  *
  */
@@ -78,9 +81,12 @@ public class JsSourceUrlPrependingFileFilter extends DefaultMavenFileFilter {
     // CHANGED (new method)
     protected void prependJsSourceUrl(File from, Writer fileWriter) throws IOException {
         if (from.getName().endsWith(".js")) {
-            File baseDir = req.getMavenSession().getCurrentProject().getBasedir();
-            String relativePath = from.getAbsolutePath().substring(baseDir.getAbsolutePath().length() + 1);
-            fileWriter.write("//@ sourceURL=" + relativePath + "\n");
+            List<String> allLines = Files.readAllLines(Paths.get(from.getAbsolutePath()));
+            if (allLines.isEmpty() || (!allLines.isEmpty() && !allLines.get(0).contains("sourceURL"))) {
+                File baseDir = req.getMavenSession().getCurrentProject().getBasedir();
+                String relativePath = from.getAbsolutePath().substring(baseDir.getAbsolutePath().length() + 1);
+                fileWriter.write("//@ sourceURL=" + relativePath + "\n");
+            }
             //fileWriter.write("// test\n");
         }
     }
