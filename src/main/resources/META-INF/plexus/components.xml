@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-set>
+  <components>
+    <!--
+        declare MavenResourcesFiltering as in maven-filtering,
+        but with custom role-hint for component itself as well as for
+        its required mavenFileFilter (pointing to our custom MavenFileFilter)
+     -->
+    <component>
+      <role>org.apache.maven.shared.filtering.MavenResourcesFiltering</role>
+      <role-hint>prependJsSourceUrl</role-hint>
+      <implementation>org.apache.maven.shared.filtering.DefaultMavenResourcesFiltering</implementation>
+      <description />
+      <isolated-realm>false</isolated-realm>
+      <requirements>
+        <requirement>
+          <role>org.sonatype.plexus.build.incremental.BuildContext</role>
+          <role-hint />
+          <field-name>buildContext</field-name>
+        </requirement>
+        <requirement>
+          <role>org.apache.maven.shared.filtering.MavenFileFilter</role>
+          <role-hint>prependJsSourceUrl</role-hint>
+          <field-name>mavenFileFilter</field-name>
+        </requirement>
+      </requirements>
+    </component>
+
+    <!-- our custom MavenFileFilter that does the actual prepending -->
+    <component>
+      <role>org.apache.maven.shared.filtering.MavenFileFilter</role>
+      <role-hint>prependJsSourceUrl</role-hint>
+      <implementation>com.aperto.jssourceurl.JsSourceUrlPrependingFileFilter</implementation>
+      <description />
+      <isolated-realm>false</isolated-realm>
+      <requirements>
+        <requirement>
+          <role>org.apache.maven.shared.filtering.MavenReaderFilter</role>
+          <role-hint />
+          <field-name>readerFilter</field-name>
+        </requirement>
+        <requirement>
+          <role>org.sonatype.plexus.build.incremental.BuildContext</role>
+          <role-hint />
+          <field-name>buildContext</field-name>
+        </requirement>
+      </requirements>
+    </component>
+  </components>
+</component-set>
