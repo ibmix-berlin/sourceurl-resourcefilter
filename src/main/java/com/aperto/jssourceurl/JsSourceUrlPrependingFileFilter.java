@@ -2,12 +2,14 @@ package com.aperto.jssourceurl;
 
 import org.apache.maven.shared.filtering.AbstractMavenFilteringRequest;
 import org.apache.maven.shared.filtering.DefaultMavenFileFilter;
+import org.apache.maven.shared.filtering.MavenFileFilter;
 import org.apache.maven.shared.filtering.MavenFilteringException;
 import org.apache.maven.shared.filtering.MavenReaderFilter;
 import org.apache.maven.shared.utils.StringUtils;
 import org.apache.maven.shared.utils.io.FileUtils;
-import org.apache.maven.shared.utils.io.IOUtil;
 import org.apache.maven.shared.utils.io.FileUtils.FilterWrapper;
+import org.apache.maven.shared.utils.io.IOUtil;
+import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
@@ -38,6 +40,7 @@ import java.util.List;
  * @author joerg.frantzius
  *
  */
+@Component(role = MavenFileFilter.class, hint = "default")
 public class JsSourceUrlPrependingFileFilter extends DefaultMavenFileFilter {
 
     // unfortunately had to copy lots of code from super class because of private methods.
@@ -62,7 +65,7 @@ public class JsSourceUrlPrependingFileFilter extends DefaultMavenFileFilter {
                 fileReader = getFileReader(encoding, from);
                 fileWriter = getFileWriter(encoding, to);
                 // CHANGED
-                prependJsSourceUrl(from, fileWriter);
+                prependJsSourceUrl(from, to, fileWriter);
                 // CHANGED END
                 Reader src = readerFilter.filter(fileReader, true, wrappers);
 
@@ -79,13 +82,15 @@ public class JsSourceUrlPrependingFileFilter extends DefaultMavenFileFilter {
     }
 
     // CHANGED (new method)
-    protected void prependJsSourceUrl(File from, Writer fileWriter) throws IOException {
+    protected void prependJsSourceUrl(File from, File to, Writer fileWriter) throws IOException {
         if (from.getName().endsWith(".js")) {
             List<String> allLines = Files.readAllLines(Paths.get(from.getAbsolutePath()));
             if (allLines.isEmpty() || (!allLines.isEmpty() && !allLines.get(0).contains("sourceURL"))) {
                 File baseDir = req.getMavenSession().getCurrentProject().getBasedir();
                 String relativePath = from.getAbsolutePath().substring(baseDir.getAbsolutePath().length() + 1);
-                fileWriter.write("//@ sourceURL=" + relativePath + "\n");
+                String annotation = "//@ sourceURL=" + relativePath + "\n";
+                getLogger().debug( "prepending sourceURL in target file " + to.getPath() + ": " + annotation);
+                fileWriter.write(annotation);
             }
             //fileWriter.write("// test\n");
         }
